@@ -44,28 +44,13 @@
               "ai-tools/claude-code",
               "ai-tools/windsurf"
             ]
-          }
+          },
+          
         ]
       },
       {
-        "tab": "API reference",
-        "groups": [
-          {
-            "group": "API documentation",
-            "pages": [
-              "api-reference/introduction"
-            ]
-          },
-          {
-            "group": "Endpoint examples",
-            "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
-            ]
-          }
-        ]
+        "tab": "API Reference",
+        "openapi": "https://api.pollinate.tech/openapi/json"
       }
     ],
     "global": {
