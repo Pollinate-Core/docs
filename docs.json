@@ -12,7 +12,7 @@
     "tabs": [
       {
         "tab": "API Reference",
-        "openapi": "https://api.pollinate.tech/openapi/json"
+        "openapi": "openapi.json"
       }
     ]
   },
