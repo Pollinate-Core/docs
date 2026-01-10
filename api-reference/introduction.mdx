@@ -1,33 +1,197 @@
 ---
 title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+description: 'Pollinate API Reference Documentation'
 ---
 
-<Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
-</Note>
+## Overview
 
-## Welcome
+The Pollinate API is a RESTful API that provides programmatic access to your supply chain data. Use this API to integrate with your existing systems, build custom applications, and automate workflows.
 
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
+## Base URLs
 
-<Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
->
-  View the OpenAPI specification file
-</Card>
+<CardGroup cols={2}>
+  <Card title="Production" icon="server">
+    `https://www.api.pollinate.tech`
+  </Card>
+  <Card title="Development" icon="code">
+    `http://localhost:3001`
+  </Card>
+</CardGroup>
 
 ## Authentication
 
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
+The Pollinate API uses a two-step authentication process:
+
+1. **Get an access token** by calling `POST /token` with Basic Authentication (email and password)
+2. **Use the Bearer token** in the `Authorization` header for all subsequent requests
+3. **Include `x-org-id` header** on every authenticated request to specify the organization
+
+See the [Authentication Guide](/guides/authentication) for detailed instructions and code examples.
+
+## Resources
+
+The API provides access to the following resources:
+
+- **Products** - Product catalog with variants
+- **Customers** - Customer records with locations and contacts
+- **Suppliers** - Supplier records with locations and contacts
+- **Orders** - Orders with order lines
+- **Invoices** - Invoices with invoice lines
+
+All resources support standard CRUD operations:
+
+- `GET /{resource}` - List resources (with pagination)
+- `POST /{resource}` - Create a new resource
+- `GET /{resource}/{id}` - Get a specific resource
+- `PATCH /{resource}/{id}` - Update a resource
+- `DELETE /{resource}/{id}` - Delete a resource
+
+## Pagination
+
+All list endpoints support pagination using query parameters:
+
+- `limit` (integer) - Maximum number of results to return
+- `offset` (integer) - Number of results to skip
+- `sort` (enum: `asc`, `desc`) - Sort order
+
+### Example
+
+```bash
+GET /products?limit=50&offset=0&sort=asc
+```
+
+This returns the first 50 products, sorted in ascending order.
+
+## Nested Resources and PATCH Diffing Logic
+
+Many resources have nested sub-resources (e.g., product variants, order lines, customer locations). These nested resources don't have separate endpoints - you manage them as part of the parent resource.
+
+### Creating Nested Resources
+
+When creating a resource with `POST`, include nested resources directly in the request body:
 
 ```json
-"security": [
-  {
-    "bearerAuth": []
-  }
-]
+POST /products
+{
+  "name": "T-Shirt",
+  "variants": [
+    {
+      "name": "Small - Blue",
+      "sku": "TSH-001-S-B",
+      "price": 19.99
+    },
+    {
+      "name": "Medium - Blue",
+      "sku": "TSH-001-M-B",
+      "price": 19.99
+    }
+  ]
+}
 ```
+
+### Updating with PATCH Diffing
+
+When updating a resource with `PATCH`, the API uses intelligent diffing logic to determine which nested resources to create, update, or delete.
+
+**How it works:**
+
+1. The API compares the nested resources you send with existing ones
+2. It uses unique constraints (e.g., variant name for products) to identify matches
+3. Based on the comparison:
+   - **Create** nested resources that don't exist (new unique constraint values)
+   - **Update** nested resources that match existing unique constraints
+   - **Delete** nested resources that aren't in your request
+
+### PATCH Example
+
+**Existing product:**
+```json
+{
+  "id": "prod_123",
+  "name": "T-Shirt",
+  "variants": [
+    {
+      "name": "Small - Blue",
+      "price": 19.99
+    },
+    {
+      "name": "Medium - Blue",
+      "price": 19.99
+    }
+  ]
+}
+```
+
+**PATCH request:**
+```json
+PATCH /products/prod_123
+{
+  "variants": [
+    {
+      "name": "Small - Blue",  // Matches existing - will be updated
+      "price": 21.99           // Price updated
+    },
+    {
+      "name": "Large - Red"     // New variant - will be created
+      "price": 23.99
+    }
+  ]
+}
+```
+
+**Result:**
+- "Small - Blue" variant is **updated** (price changed to 21.99)
+- "Large - Red" variant is **created**
+- "Medium - Blue" variant is **deleted** (not in the request)
+
+<Warning>
+**Important**: When updating resources with nested sub-resources, always include ALL nested resources you want to keep. Missing items will be deleted. This ensures your API data stays in sync with what you send.
+</Warning>
+
+### Unique Constraints by Resource
+
+The API uses different unique constraints for diffing:
+
+- **Products**: Variant name (must be unique per product)
+- **Orders**: Order line identifier (typically product ID + variant name combination)
+- **Invoices**: Invoice line identifier (typically product ID + variant name combination)
+- **Customers/Suppliers**: Location name (must be unique per partner)
+- **Customers/Suppliers**: Contact email (must be unique per partner)
+
+<Tip>
+**Best Practice**: When updating resources with nested sub-resources, fetch the current resource first, modify the nested resources as needed, then send the complete updated structure in your PATCH request.
+</Tip>
+
+## Error Responses
+
+The API uses standard HTTP status codes:
+
+- `200 OK` - Successful request
+- `201 Created` - Resource created successfully
+- `400 Bad Request` - Invalid request (missing required fields, invalid data)
+- `401 Unauthorized` - Authentication failed or token expired
+- `403 Forbidden` - User doesn't have access to the organization or resource
+- `404 Not Found` - Resource not found
+- `500 Internal Server Error` - Server error
+
+Error responses include a JSON body with error details:
+
+```json
+{
+  "error": "Error message describing what went wrong"
+}
+```
+
+## Rate Limiting
+
+API rate limits apply to prevent abuse. Check response headers for rate limit information:
+
+- `X-RateLimit-Limit` - Maximum number of requests per period
+- `X-RateLimit-Remaining` - Number of requests remaining in current period
+- `X-RateLimit-Reset` - Time when the rate limit resets
+
+## Next Steps
+
+- Review the [Authentication Guide](/guides/authentication) for detailed auth instructions
+- Explore [Resource Guides](/guides/products) to understand how resources work
+- Check individual endpoint documentation below for specific request/response formats

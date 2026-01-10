@@ -1,36 +1,59 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
+  "theme": "linden",
+  "name": "Pollinate API",
+  "fonts": {
+    "family": "Inter, system-ui, -apple-system, sans-serif"
+  },
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#f15a25",
+    "light": "#f4f4da",
+    "dark": "#1a1412"
   },
   "favicon": "/favicon.svg",
   "navigation": {
     "tabs": [
       {
+        "tab": "Guides",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": ["guides/authentication"]
+          },
+          {
+            "group": "Resources",
+            "pages": [
+              "guides/products",
+              "guides/customers",
+              "guides/suppliers",
+              "guides/partners",
+              "guides/orders",
+              "guides/invoices"
+            ]
+          }
+        ]
+      },
+      {
         "tab": "API Reference",
-        "openapi": "openapi.json"
+        "openapi": "api-reference/openapi.json"
       }
     ]
   },
   "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
+    "light": "/logo/logo.png",
+    "dark": "/logo/logo.png"
   },
   "navbar": {
     "links": [
       {
         "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "href": "mailto:support@pollinate.tech"
       }
     ],
     "primary": {
       "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
+      "label": "API Dashboard",
+      "href": "https://www.api.pollinate.tech"
     }
   },
   "contextual": {
@@ -46,10 +69,6 @@
    ]
   },
   "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+    "socials": {}
   }
 }

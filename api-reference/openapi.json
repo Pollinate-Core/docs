@@ -1,54 +1,548 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "OpenAPI Plant Store",
-    "description": "A sample API that uses a plant store as an example to demonstrate features in the OpenAPI specification",
-    "license": {
-      "name": "MIT"
-    },
+    "title": "Pollinate API",
+    "description": "External API for Pollinate - A flexible supply chain SaaS platform",
     "version": "1.0.0"
   },
   "servers": [
     {
-      "url": "http://sandbox.mintlify.com"
-    }
-  ],
-  "security": [
+      "url": "https://www.api.pollinate.tech",
+      "description": "Production server"
+    },
     {
-      "bearerAuth": []
+      "url": "http://localhost:3001",
+      "description": "Development server"
     }
   ],
+  "components": {
+    "securitySchemes": {
+      "basicAuth": {
+        "type": "http",
+        "scheme": "basic",
+        "description": "Basic authentication using email and password. Use email as username and password as password."
+      },
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Bearer token authentication. Also requires x-org-id header."
+      }
+    },
+    "parameters": {
+      "orgIdHeader": {
+        "name": "x-org-id",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "description": "Organization ID for scoping the request"
+      },
+      "paginationLimit": {
+        "name": "limit",
+        "in": "query",
+        "schema": {
+          "type": "integer",
+          "default": 50,
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "description": "Maximum number of results to return"
+      },
+      "paginationOffset": {
+        "name": "offset",
+        "in": "query",
+        "schema": {
+          "type": "integer",
+          "default": 0,
+          "minimum": 0
+        },
+        "description": "Number of results to skip"
+      },
+      "sortOrder": {
+        "name": "sort",
+        "in": "query",
+        "schema": {
+          "type": "string",
+          "enum": ["asc", "desc"],
+          "default": "asc"
+        },
+        "description": "Sort order for results"
+      },
+      "resourceId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        },
+        "description": "Resource identifier"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": ["error"],
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error message"
+          }
+        }
+      },
+      "TokenResponse": {
+        "type": "object",
+        "required": ["token"],
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Bearer token for authentication"
+          }
+        }
+      },
+      "ProductVariant": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Variant name (must be unique per product)"
+          },
+          "sku": {
+            "type": "string",
+            "description": "SKU for the variant"
+          },
+          "price": {
+            "type": "number",
+            "format": "float",
+            "description": "Price of the variant"
+          }
+        }
+      },
+      "Product": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Product identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Product name"
+          },
+          "description": {
+            "type": "string",
+            "description": "Product description"
+          },
+          "sku": {
+            "type": "string",
+            "description": "Product SKU"
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductVariant"
+            },
+            "description": "Product variants"
+          }
+        }
+      },
+      "Location": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Location name (must be unique per partner)"
+          },
+          "address": {
+            "type": "string",
+            "description": "Street address"
+          },
+          "city": {
+            "type": "string",
+            "description": "City"
+          },
+          "state": {
+            "type": "string",
+            "description": "State or province"
+          },
+          "zipCode": {
+            "type": "string",
+            "description": "ZIP or postal code"
+          },
+          "country": {
+            "type": "string",
+            "description": "Country"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["billing", "shipping", "remit-to"],
+            "description": "Location type"
+          }
+        }
+      },
+      "Contact": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Contact name"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Contact email (must be unique per partner)"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Contact phone number"
+          },
+          "role": {
+            "type": "string",
+            "description": "Contact role"
+          }
+        }
+      },
+      "Customer": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Customer identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Customer name"
+          },
+          "company": {
+            "type": "string",
+            "description": "Company name"
+          },
+          "taxId": {
+            "type": "string",
+            "description": "Tax identification number"
+          },
+          "locations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Location"
+            },
+            "description": "Customer locations"
+          },
+          "contacts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Contact"
+            },
+            "description": "Customer contacts"
+          }
+        }
+      },
+      "Supplier": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Supplier identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Supplier name"
+          },
+          "company": {
+            "type": "string",
+            "description": "Company name"
+          },
+          "taxId": {
+            "type": "string",
+            "description": "Tax identification number"
+          },
+          "locations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Location"
+            },
+            "description": "Supplier locations"
+          },
+          "contacts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Contact"
+            },
+            "description": "Supplier contacts"
+          }
+        }
+      },
+      "OrderLine": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "description": "Product identifier"
+          },
+          "variantName": {
+            "type": "string",
+            "description": "Product variant name"
+          },
+          "quantity": {
+            "type": "integer",
+            "description": "Quantity ordered"
+          },
+          "unitPrice": {
+            "type": "number",
+            "format": "float",
+            "description": "Price per unit"
+          },
+          "totalPrice": {
+            "type": "number",
+            "format": "float",
+            "description": "Total line price"
+          }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Order identifier"
+          },
+          "orderNumber": {
+            "type": "string",
+            "description": "Order number"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "Order date"
+          },
+          "status": {
+            "type": "string",
+            "description": "Order status"
+          },
+          "customerId": {
+            "type": "string",
+            "description": "Customer identifier"
+          },
+          "orderLines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderLine"
+            },
+            "description": "Order line items"
+          },
+          "totalAmount": {
+            "type": "number",
+            "format": "float",
+            "description": "Total order amount"
+          }
+        }
+      },
+      "InvoiceLine": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "description": "Product identifier"
+          },
+          "variantName": {
+            "type": "string",
+            "description": "Product variant name"
+          },
+          "quantity": {
+            "type": "integer",
+            "description": "Quantity invoiced"
+          },
+          "unitPrice": {
+            "type": "number",
+            "format": "float",
+            "description": "Price per unit"
+          },
+          "totalPrice": {
+            "type": "number",
+            "format": "float",
+            "description": "Total line price"
+          }
+        }
+      },
+      "Invoice": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Invoice identifier"
+          },
+          "invoiceNumber": {
+            "type": "string",
+            "description": "Invoice number"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "Invoice date"
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date",
+            "description": "Invoice due date"
+          },
+          "status": {
+            "type": "string",
+            "description": "Invoice status"
+          },
+          "customerId": {
+            "type": "string",
+            "description": "Customer identifier (for sales invoices)"
+          },
+          "supplierId": {
+            "type": "string",
+            "description": "Supplier identifier (for purchase invoices)"
+          },
+          "invoiceLines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvoiceLine"
+            },
+            "description": "Invoice line items"
+          },
+          "subtotal": {
+            "type": "number",
+            "format": "float",
+            "description": "Subtotal amount"
+          },
+          "tax": {
+            "type": "number",
+            "format": "float",
+            "description": "Tax amount"
+          },
+          "totalAmount": {
+            "type": "number",
+            "format": "float",
+            "description": "Total invoice amount"
+          },
+          "paymentTerms": {
+            "type": "string",
+            "description": "Payment terms"
+          }
+        }
+      },
+      "Health": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["ok"],
+            "description": "Health status"
+          }
+        }
+      }
+    }
+  },
   "paths": {
-    "/plants": {
+    "/health": {
       "get": {
-        "description": "Returns all plants from the system that the user has access to",
-        "parameters": [
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "The maximum number of results to return",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
+        "summary": "Health check",
+        "description": "Check API health status. This endpoint does not require authentication.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "API is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
             }
+          }
+        }
+      }
+    },
+    "/token": {
+      "post": {
+        "summary": "Get access token",
+        "description": "Authenticate and receive a bearer token. Use Basic Authentication with your email as the username and password as the password.",
+        "security": [
+          {
+            "basicAuth": []
           }
         ],
         "responses": {
           "200": {
-            "description": "Plant response",
+            "description": "Authentication successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                },
+                "example": {
+                  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/products": {
+      "get": {
+        "summary": "List products",
+        "description": "Get a paginated list of products",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/orgIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/paginationLimit"
+          },
+          {
+            "$ref": "#/components/parameters/paginationOffset"
+          },
+          {
+            "$ref": "#/components/parameters/sortOrder"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of products",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/Plant"
+                    "$ref": "#/components/schemas/Product"
                   }
                 }
               }
             }
           },
-          "400": {
-            "description": "Unexpected error",
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
             "content": {
               "application/json": {
                 "schema": {
@@ -60,31 +554,61 @@
         }
       },
       "post": {
-        "description": "Creates a new plant in the store",
+        "summary": "Create product",
+        "description": "Create a new product with optional variants",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/orgIdHeader"
+          }
+        ],
         "requestBody": {
-          "description": "Plant to add to the store",
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NewPlant"
+                "$ref": "#/components/schemas/Product"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
-          "200": {
-            "description": "plant response",
+          "201": {
+            "description": "Product created",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Plant"
+                  "$ref": "#/components/schemas/Product"
                 }
               }
             }
           },
           "400": {
-            "description": "unexpected error",
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
             "content": {
               "application/json": {
                 "schema": {
@@ -96,28 +620,127 @@
         }
       }
     },
-    "/plants/{id}": {
-      "delete": {
-        "description": "Deletes a single plant based on the ID supplied",
+    "/products/{id}": {
+      "get": {
+        "summary": "Get product",
+        "description": "Get a specific product by ID",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "parameters": [
           {
-            "name": "id",
-            "in": "path",
-            "description": "ID of plant to delete",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int64"
+            "$ref": "#/components/parameters/orgIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/resourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Product details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
+                }
+              }
             }
+          },
+          "404": {
+            "description": "Product not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update product",
+        "description": "Update a product. Include all variants you want to keep - variants not in the request will be deleted.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/orgIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/resourceId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Product"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Product updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete product",
+        "description": "Delete a product by ID",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/orgIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/resourceId"
           }
         ],
         "responses": {
           "204": {
-            "description": "Plant deleted",
-            "content": {}
+            "description": "Product deleted"
           },
-          "400": {
-            "description": "unexpected error",
+          "404": {
+            "description": "Product not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -128,89 +751,757 @@
           }
         }
       }
-    }
-  },
-  "webhooks": {
-    "/plant/webhook": {
+    },
+    "/customers": {
+      "get": {
+        "summary": "List customers",
+        "description": "Get a paginated list of customers",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/orgIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/paginationLimit"
+          },
+          {
+            "$ref": "#/components/parameters/paginationOffset"
+          },
+          {
+            "$ref": "#/components/parameters/sortOrder"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of customers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Customer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
-        "description": "Information about a new plant added to the store",
+        "summary": "Create customer",
+        "description": "Create a new customer with optional locations and contacts",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/orgIdHeader"
+          }
+        ],
         "requestBody": {
-          "description": "Plant added to the store",
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NewPlant"
+                "$ref": "#/components/schemas/Customer"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Customer created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Customer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/customers/{id}": {
+      "get": {
+        "summary": "Get customer",
+        "description": "Get a specific customer by ID",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/orgIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/resourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Customer details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Customer"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Customer not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update customer",
+        "description": "Update a customer. Include all locations and contacts you want to keep - items not in the request will be deleted.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/orgIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/resourceId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Customer"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Return a 200 status to indicate that the data was received successfully"
-          }
-        }
-      }
-    }
-  },
-  "components": {
-    "schemas": {
-      "Plant": {
-        "required": [
-          "name"
-        ],
-        "type": "object",
-        "properties": {
-          "name": {
-            "description": "The name of the plant",
-            "type": "string"
-          },
-          "tag": {
-            "description": "Tag to specify the type",
-            "type": "string"
-          }
-        }
-      },
-      "NewPlant": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/Plant"
-          },
-          {
-            "required": [
-              "id"
-            ],
-            "type": "object",
-            "properties": {
-              "id": {
-                "description": "Identification number of the plant",
-                "type": "integer",
-                "format": "int64"
+            "description": "Customer updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Customer"
+                }
               }
             }
           }
-        ]
+        }
       },
-      "Error": {
-        "required": [
-          "error",
-          "message"
+      "delete": {
+        "summary": "Delete customer",
+        "description": "Delete a customer by ID",
+        "security": [
+          {
+            "bearerAuth": []
+          }
         ],
-        "type": "object",
-        "properties": {
-          "error": {
-            "type": "integer",
-            "format": "int32"
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/orgIdHeader"
           },
-          "message": {
-            "type": "string"
+          {
+            "$ref": "#/components/parameters/resourceId"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Customer deleted"
+          },
+          "404": {
+            "description": "Customer not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       }
     },
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer"
+    "/suppliers": {
+      "get": {
+        "summary": "List suppliers",
+        "description": "Get a paginated list of suppliers",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/orgIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/paginationLimit"
+          },
+          {
+            "$ref": "#/components/parameters/paginationOffset"
+          },
+          {
+            "$ref": "#/components/parameters/sortOrder"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of suppliers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Supplier"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create supplier",
+        "description": "Create a new supplier with optional locations and contacts",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/orgIdHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Supplier"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Supplier created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Supplier"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/suppliers/{id}": {
+      "get": {
+        "summary": "Get supplier",
+        "description": "Get a specific supplier by ID",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/orgIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/resourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Supplier details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Supplier"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Supplier not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update supplier",
+        "description": "Update a supplier. Include all locations and contacts you want to keep - items not in the request will be deleted.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/orgIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/resourceId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Supplier"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Supplier updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Supplier"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete supplier",
+        "description": "Delete a supplier by ID",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/orgIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/resourceId"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Supplier deleted"
+          },
+          "404": {
+            "description": "Supplier not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orders": {
+      "get": {
+        "summary": "List orders",
+        "description": "Get a paginated list of orders",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/orgIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/paginationLimit"
+          },
+          {
+            "$ref": "#/components/parameters/paginationOffset"
+          },
+          {
+            "$ref": "#/components/parameters/sortOrder"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of orders",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Order"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create order",
+        "description": "Create a new order with order lines",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/orgIdHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Order"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Order created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orders/{id}": {
+      "get": {
+        "summary": "Get order",
+        "description": "Get a specific order by ID",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/orgIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/resourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Order not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update order",
+        "description": "Update an order. Include all order lines you want to keep - lines not in the request will be deleted.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/orgIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/resourceId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Order"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Order updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Order"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete order",
+        "description": "Delete an order by ID",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/orgIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/resourceId"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Order deleted"
+          },
+          "404": {
+            "description": "Order not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/invoices": {
+      "get": {
+        "summary": "List invoices",
+        "description": "Get a paginated list of invoices",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/orgIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/paginationLimit"
+          },
+          {
+            "$ref": "#/components/parameters/paginationOffset"
+          },
+          {
+            "$ref": "#/components/parameters/sortOrder"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of invoices",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Invoice"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create invoice",
+        "description": "Create a new invoice with invoice lines",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/orgIdHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Invoice"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Invoice created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Invoice"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/invoices/{id}": {
+      "get": {
+        "summary": "Get invoice",
+        "description": "Get a specific invoice by ID",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/orgIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/resourceId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Invoice details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Invoice"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Invoice not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update invoice",
+        "description": "Update an invoice. Include all invoice lines you want to keep - lines not in the request will be deleted.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/orgIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/resourceId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Invoice"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Invoice updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Invoice"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete invoice",
+        "description": "Delete an invoice by ID",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/orgIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/resourceId"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Invoice deleted"
+          },
+          "404": {
+            "description": "Invoice not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
       }
     }
   }

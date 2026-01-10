@@ -1,97 +1,99 @@
 ---
 title: "Introduction"
-description: "Welcome to the new home for your documentation"
+description: "Welcome to the Pollinate API documentation"
 ---
 
-## Setting up
+## Welcome to Pollinate
 
-Get your documentation site up and running in minutes.
+Pollinate is a flexible supply chain SaaS platform that enables rapid implementation of software solutions for manufacturing and distribution companies. Our core application acts as a flexible data lake, allowing coding agents to build apps and integrations that seamlessly connect to existing supply chain systems.
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+## About This API
 
-## Make it yours
+The Pollinate External API provides programmatic access to your supply chain data. Use this API to:
 
-Design a docs site that looks great and empowers your users.
+- Integrate with ERPs, MRPs, and other supply chain software
+- Build custom dashboards and applications
+- Automate workflows and processes
+- Sync data between systems in real-time
 
-<Columns cols={2}>
+## Base URLs
+
+<CardGroup cols={2}>
+  <Card title="Production" icon="server">
+    `https://www.api.pollinate.tech`
+  </Card>
+  <Card title="Development" icon="code">
+    `http://localhost:3001`
+  </Card>
+</CardGroup>
+
+## Quick Start
+
+Get started with the Pollinate API in three simple steps:
+
+<CardGroup cols={3}>
   <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
+    title="Authenticate"
+    icon="key"
+    href="/guides/authentication"
   >
-    Edit your docs locally and preview them in real time.
+    Learn how to authenticate and get your access token
   </Card>
   <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
+    title="Explore Resources"
+    icon="box"
+    href="/guides/products"
   >
-    Customize the design and colors of your site to match your brand.
-  </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+    Understand the core resources: Products, Customers, Suppliers, Orders, and Invoices
   </Card>
   <Card
-    title="API documentation"
+    title="API Reference"
     icon="terminal"
     href="/api-reference/introduction"
   >
-    Auto-generate API documentation from OpenAPI specifications.
+    View complete endpoint documentation with examples
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## Core Resources
 
-Everything you need to create world-class documentation.
+Pollinate organizes data around six main resource types:
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
+<CardGroup cols={3}>
+  <Card title="Products" icon="tag" href="/guides/products">
+    Manage product catalogs with variants
   </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
+  <Card title="Customers" icon="user" href="/guides/customers">
+    Manage customer relationships and locations
   </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
+  <Card title="Suppliers" icon="truck" href="/guides/suppliers">
+    Manage supplier relationships and locations
   </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
+  <Card title="Orders" icon="shopping-cart" href="/guides/orders">
+    Create and manage orders with line items
   </Card>
-</Columns>
+  <Card title="Invoices" icon="file-invoice" href="/guides/invoices">
+    Track invoices and invoice lines
+  </Card>
+  <Card title="Partners" icon="users" href="/guides/partners">
+    Understand the partner model connecting customers and suppliers
+  </Card>
+</CardGroup>
 
-## Need inspiration?
+## Key Features
+
+- **RESTful Design**: Standard HTTP methods and status codes
+- **Nested Resources**: Handle variants, lines, locations, and contacts within main resources
+- **Intelligent Patching**: Update nested resources with automatic diffing logic
+- **Pagination**: Efficiently paginate through large datasets
+- **Organization Scoped**: All requests are scoped to your organization
+
+## Need Help?
 
 <Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
+  title="Get Support"
+  icon="headset"
+  href="mailto:support@pollinate.tech"
 >
-  Browse our showcase of exceptional documentation sites.
+  Contact our support team for assistance with integration questions
 </Card>
