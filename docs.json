@@ -47,14 +47,9 @@
     "links": [
       {
         "label": "Support",
-        "href": "mailto:support@pollinate.tech"
+        "href": "mailto:admin@pollinate.tech"
       }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "API Dashboard",
-      "href": "https://www.api.pollinate.tech"
-    }
+    ]
   },
   "contextual": {
     "options": [
