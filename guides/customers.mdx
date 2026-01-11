@@ -1,74 +1,160 @@
 ---
 title: "Customers"
-description: "Understanding customers in Pollinate"
+description: "Managing customers and their locations and contacts in Pollinate"
 ---
 
 ## Overview
 
-Customers represent the companies or individuals you sell products and services to. In Pollinate, customers are technically **partners** (see the [Partners guide](/guides/partners) for more details), which means they can have multiple locations and contacts associated with them.
+Customers represent the companies or individuals you sell products and services to. In Pollinate, the Customers API is a simplified REST interface that abstracts the underlying **Partners and Partnerships** data model. The API automatically manages the `partnershipType = "customer"` classification, flattening both Partner and Partnership data into a single clean customer object with nested locations and contacts.
 
-## Customer Structure
+Each customer has:
+- **Basic information** - Name, legal name, code, notes, contact details
+- **Partnership details** - Status, payment terms, credit limits, currency preferences
+- **Locations** - Multiple shipping, billing, and remittance addresses
+- **Contacts** - Multiple people with different roles and preferences
+- **Properties** - Custom JSONB metadata at customer, location, and contact levels
+
+## Customer Architecture
+
+Customers are built on top of two underlying entities:
 
 ```
-Customer (Partner)
-├── Basic Information (name, company, tax ID)
-├── Locations (shipping, billing addresses)
-│   ├── Location 1
-│   ├── Location 2
-│   └── Location 3
-└── Contacts (people, roles, email, phone)
-    ├── Contact 1
-    ├── Contact 2
-    └── Contact 3
+Partner (base entity)
+├── name, legalName, code, notes
+├── email, phone, website
+│
+Partnership (type = "customer")
+├── status, paymentTermsDays, creditLimit
+├── defaultCurrency, leadTimeDays, minimumOrderValue
+└── properties (JSONB)
 ```
+
+The Customers API presents these as a single flattened object with nested relations:
+
+```
+Customer
+├── Partner fields (flattened)
+├── Partnership fields (flattened)
+├── Locations[] (nested, owned by partner)
+├── Contacts[] (nested, owned by partner)
+└── Properties (at customer, location, and contact levels)
+```
+
+## Customer Status Workflow
+
+Customers have a partnership status that indicates the relationship state:
+
+```
+pending → active ↔ on_hold
+         ↓
+      inactive, suspended, terminated
+```
+
+**Status Values:**
+
+- `active` - Customer is actively trading
+- `inactive` - Customer is not currently active
+- `pending` - New customer, relationship not yet confirmed
+- `on_hold` - Customer account is temporarily suspended
+- `suspended` - Customer account is formally suspended
+- `terminated` - Customer relationship has ended
+
+<Note>
+Status values can be used for filtering and reporting on customer relationships.
+</Note>
 
 ## Locations and Contacts
 
-Locations and contacts are sub-resources nested within customers. They don't have separate endpoints - you manage them as part of the customer object.
+Locations and contacts are nested sub-resources within customers. They don't have separate endpoints - you manage them as part of the customer object using intelligent diffing.
 
-<Note>
-When creating or updating a customer, include locations and contacts directly in the request body. The API uses unique constraints to determine whether to create, update, or delete these sub-resources.
-</Note>
+### Location Types
 
-### Example Customer with Locations and Contacts
+Each location has a `type` that indicates its purpose:
+
+- **billing** - Used for invoices and billing
+- **shipping** - Used for order delivery
+- **remittance** - Used for payment remittances
+
+### Contact Roles
+
+Contacts can have a `role` to indicate their function:
+
+- **primary** - Main contact person
+- **sales** - Sales department contact
+- **accounting** - Accounting/finance contact
+- **logistics** - Shipping/logistics contact
+- **executive** - Executive/management contact
+
+### Example Customer Structure
 
 ```json
 {
-  "name": "Acme Corporation",
-  "company": "Acme Corp",
-  "taxId": "TAX123456",
+  "id": "par_xyz123",
+  "organizationId": "org_123",
+  "partnershipId": "pship_abc456",
+  "name": "Acme Manufacturing Corp",
+  "legalName": "Acme Manufacturing Corporation Inc.",
+  "code": "ACME-001",
+  "email": "orders@acme.com",
+  "phone": "+1-555-0100",
+  "website": "https://acme.com",
+  "status": "active",
+  "paymentTermsDays": 30,
+  "creditLimit": 250000,
+  "defaultCurrency": "USD",
+  "leadTimeDays": 7,
+  "minimumOrderValue": 1000,
+  "properties": {
+    "industry": "Manufacturing",
+    "account_tier": "premium"
+  },
   "locations": [
     {
-      "name": "Main Office",
-      "address": "123 Business St",
-      "city": "San Francisco",
-      "state": "CA",
-      "zipCode": "94105",
+      "id": "loc_456",
+      "type": "billing",
+      "label": "Headquarters",
+      "addressLine1": "123 Industrial Blvd",
+      "addressLine2": "Suite 200",
+      "city": "Chicago",
+      "state": "IL",
+      "postalCode": "60601",
       "country": "USA",
-      "type": "billing"
+      "isDefault": true,
+      "properties": {
+        "building_code": "HQ-001"
+      }
     },
     {
-      "name": "Warehouse",
-      "address": "456 Industrial Ave",
-      "city": "Oakland",
-      "state": "CA",
-      "zipCode": "94601",
+      "id": "loc_789",
+      "type": "shipping",
+      "label": "Warehouse",
+      "addressLine1": "456 Logistics Way",
+      "city": "Indianapolis",
+      "state": "IN",
       "country": "USA",
-      "type": "shipping"
+      "isDefault": false
     }
   ],
   "contacts": [
     {
+      "id": "con_001",
       "name": "John Doe",
+      "title": "Procurement Director",
+      "role": "primary",
+      "isPrimary": true,
       "email": "john@acme.com",
-      "phone": "+1-555-0100",
-      "role": "Purchasing Manager"
+      "phone": "+1-555-0101",
+      "properties": {
+        "preferred_contact_method": "email"
+      }
     },
     {
+      "id": "con_002",
       "name": "Jane Smith",
-      "email": "jane@acme.com",
-      "phone": "+1-555-0101",
-      "role": "Accounts Payable"
+      "title": "Accounts Manager",
+      "role": "accounting",
+      "isPrimary": false,
+      "email": "jane@acme.com"
     }
   ]
 }
@@ -82,23 +168,25 @@ Maintain comprehensive customer information:
 
 - Store multiple shipping and billing addresses
 - Track different contacts for different purposes
-- Manage customer-specific pricing or terms
+- Manage customer-specific payment terms and credit limits
+- Store custom metadata and integration IDs
 
 ### 2. Order Management
 
 Use customer data when creating orders:
 
-- Automatically populate shipping addresses
+- Link orders to customer partnerships
+- Auto-populate delivery addresses from customer locations
 - Route orders to appropriate contacts
-- Track order history by customer
+- Apply customer-specific payment terms
 
-### 3. Invoice Processing
+### 3. Invoicing
 
 Link invoices to customers with proper billing information:
 
 - Generate invoices with correct billing addresses
-- Send invoices to appropriate contacts
-- Track accounts receivable by customer
+- Send invoices to appropriate accounting contacts
+- Track accounts receivable by customer partnership
 
 ## Relationships
 
@@ -108,8 +196,8 @@ Customers are linked to orders, enabling you to track sales and order history.
 
 ```mermaid
 graph LR
-    A[Customer] -->|Places| B[Orders]
-    B --> C[Order Lines]
+    A[Customer] -->|placed via partnership| B[Orders]
+    B -->|contains| C[Order Lines]
 ```
 
 ### Customers → Invoices
@@ -118,114 +206,333 @@ Customers receive invoices for purchases, connecting sales to financial records.
 
 ```mermaid
 graph LR
-    A[Customer] -->|Receives| B[Invoices]
-    B --> C[Invoice Lines]
+    A[Customer] -->|receives| B[Invoices]
+    B -->|contains| C[Invoice Lines]
+```
+
+## Intelligent Diffing Algorithm
+
+When updating a customer, the API uses intelligent matching to determine which locations and contacts to create, update, or delete.
+
+### Location Diffing
+
+**Matching Priority:**
+
+1. **By ID** - If the location includes an `id`, it matches directly to an existing location
+2. **By Label** - If the location includes a `label`, it matches case-insensitively with existing locations
+3. **Create** - Locations without a match are created as new
+4. **Delete** - Existing locations without a match in the request are deleted
+
+**Example:**
+
+```json
+Existing locations:
+- id: loc_1, label: "HQ", city: "NYC"
+- id: loc_2, label: "Warehouse", city: "NJ"
+
+PATCH request:
+- id: loc_1, city: "Boston"  → UPDATED (matched by ID)
+- label: "warehouse", city: "Princeton"  → UPDATED (matched by label, case-insensitive)
+- label: "New DC", city: "PA"  → CREATED (no match)
+
+Result:
+- loc_1: Updated (city NYC → Boston)
+- loc_2: Updated (matched by "warehouse" = "Warehouse")
+- New location created (New DC in PA)
+```
+
+### Contact Diffing
+
+**Matching Priority:**
+
+1. **By ID** - If the contact includes an `id`, it matches directly to an existing contact
+2. **By Name** - If the contact includes a `name`, it matches case-insensitively with existing contacts
+3. **Create** - Contacts without a match are created as new
+4. **Delete** - Existing contacts without a match in the request are deleted
+
+**Example:**
+
+```json
+Existing contacts:
+- id: con_1, name: "John Doe", role: "primary"
+- id: con_2, name: "Jane Smith", role: "accounting"
+
+PATCH request:
+- id: con_1, phone: "+1-555-9999"  → UPDATED (matched by ID)
+- name: "jane smith", phone: "+1-555-8888"  → UPDATED (matched by name, case-insensitive)
+- name: "Bob Wilson", role: "sales"  → CREATED (no match)
+
+Result:
+- con_1: Updated (phone added)
+- con_2: Updated (matched by "jane smith" = "Jane Smith")
+- New contact created (Bob Wilson)
+```
+
+## Properties Merge Behavior
+
+Properties are custom JSONB objects that can store flexible key-value data. Properties exist at three levels:
+- **Customer Level** - On the partnership record
+- **Location Level** - On each location
+- **Contact Level** - On each contact
+
+When updating, properties are merged intelligently:
+
+- **Add new keys** - Provide new property keys that don't exist
+- **Update existing keys** - Provide a key with a new value
+- **Delete keys** - Set a property key to `null` to delete it
+
+### Example Flow
+
+```javascript
+// Initial properties
+{
+  "industry": "Manufacturing",
+  "region": "North America",
+  "account_tier": "gold"
+}
+
+// Merge request
+{
+  "properties": {
+    "account_tier": "platinum",  // Update
+    "region": null,              // Delete
+    "verified": true             // Add
+  }
+}
+
+// Result
+{
+  "industry": "Manufacturing",   // Preserved
+  "account_tier": "platinum",    // Updated
+  "verified": true               // Added
+  // region deleted
+}
 ```
 
 ## Example Workflows
 
-### Creating a Customer with Locations and Contacts
+### Creating a Customer with Full Details
 
-1. **Create the customer** with all related information:
+Create a customer with all information in one request:
 
 ```json
 POST /customers
 {
-  "name": "Tech Solutions Inc",
-  "company": "Tech Solutions",
+  "name": "Acme Manufacturing Corp",
+  "legalName": "Acme Manufacturing Corporation Inc.",
+  "code": "ACME-001",
+  "email": "orders@acme.com",
+  "phone": "+1-555-0100",
+  "website": "https://acme.com",
+  "status": "active",
+  "paymentTermsDays": 30,
+  "creditLimit": 250000,
+  "defaultCurrency": "USD",
+  "leadTimeDays": 7,
+  "minimumOrderValue": 1000,
+  "properties": {
+    "industry": "Manufacturing",
+    "account_tier": "premium"
+  },
   "locations": [
     {
-      "name": "Headquarters",
-      "address": "789 Tech Blvd",
-      "city": "Seattle",
-      "state": "WA",
-      "zipCode": "98101",
-      "type": "billing"
+      "type": "billing",
+      "isDefault": true,
+      "label": "Headquarters",
+      "addressLine1": "123 Industrial Blvd",
+      "city": "Chicago",
+      "state": "IL",
+      "country": "USA"
     }
   ],
   "contacts": [
     {
-      "name": "Bob Johnson",
-      "email": "bob@techsolutions.com",
-      "role": "Procurement"
+      "name": "John Doe",
+      "title": "Procurement Director",
+      "role": "primary",
+      "isPrimary": true,
+      "email": "john@acme.com"
     }
   ]
 }
 ```
 
-2. The API creates the customer, locations, and contacts in a single request.
+### Updating Locations with Label Matching
 
-### Adding a New Location
-
-Update the customer to include additional locations:
+Update a location by matching its user-friendly label:
 
 ```json
-PATCH /customers/{id}
+PATCH /customers/par_abc123
 {
   "locations": [
     {
-      "name": "Headquarters",  // Existing - will be updated/preserved
-      "address": "789 Tech Blvd",
-      "city": "Seattle",
-      "state": "WA",
-      "zipCode": "98101",
-      "type": "billing"
-    },
-    {
-      "name": "Distribution Center",  // New - will be created
-      "address": "321 Logistics Way",
-      "city": "Tacoma",
-      "state": "WA",
-      "zipCode": "98402",
-      "type": "shipping"
+      "label": "headquarters",
+      "city": "New York",
+      "state": "NY",
+      "addressLine1": "999 Park Ave",
+      "country": "USA"
     }
   ]
 }
 ```
 
-### Updating Contacts
+The system finds the location with label "Headquarters" (case-insensitive) and updates it.
 
-When updating contacts, include all contacts you want to keep:
+### Adding a New Location
+
+Include existing locations and the new one:
 
 ```json
-PATCH /customers/{id}
+PATCH /customers/par_abc123
 {
-  "contacts": [
+  "locations": [
     {
-      "name": "Bob Johnson",  // Existing - will be updated
-      "email": "bob.newemail@techsolutions.com",  // Updated email
-      "role": "Procurement"
+      "id": "loc_existing_123",
+      "label": "Headquarters",
+      "city": "Chicago",
+      "addressLine1": "123 Industrial Blvd",
+      "country": "USA"
     },
     {
-      "name": "Alice Williams",  // New - will be created
-      "email": "alice@techsolutions.com",
-      "role": "Accounts Payable"
+      "type": "shipping",
+      "label": "Distribution Center",
+      "addressLine1": "456 Logistics Way",
+      "city": "Indianapolis",
+      "country": "USA"
     }
-    // Previous contacts not included will be deleted
   ]
 }
+```
+
+### Updating Properties
+
+Add, update, and delete properties in one request:
+
+```json
+PATCH /customers/par_abc123
+{
+  "properties": {
+    "account_tier": "enterprise",      // Update
+    "renewal_date": "2024-12-31",      // Add
+    "legacy_id": null                  // Delete
+  }
+}
+```
+
+### Complex Multi-Resource Update
+
+Update customer details, manage locations, manage contacts, and update properties all at once:
+
+```json
+PATCH /customers/par_abc123
+{
+  "name": "Acme Manufacturing Ltd",
+  "status": "on_hold",
+  "properties": {
+    "reason_on_hold": "Credit review",
+    "on_hold_date": "2024-03-01",
+    "review_required": null
+  },
+  "locations": [
+    {
+      "id": "loc_existing_123",
+      "city": "Boston",
+      "addressLine1": "100 Newbury St"
+    },
+    {
+      "type": "shipping",
+      "label": "New Warehouse",
+      "addressLine1": "200 Logistics Dr",
+      "city": "Newark",
+      "state": "NJ",
+      "country": "USA"
+    }
+  ],
+  "contacts": [
+    {
+      "id": "con_existing_456",
+      "phone": "+1-555-9999"
+    },
+    {
+      "name": "Jane Smith",
+      "role": "sales",
+      "email": "jane@acme.com"
+    }
+  ]
+}
+```
+
+## Filtering and Sorting
+
+### List Customers by Status
+
+```bash
+curl -X GET "https://api.example.com/customers?status=active" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "x-org-id: org_xxxx"
+```
+
+### Pagination
+
+```bash
+# Get first 20 customers
+curl -X GET "https://api.example.com/customers?limit=20&offset=0" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "x-org-id: org_xxxx"
+
+# Get next 20 customers
+curl -X GET "https://api.example.com/customers?limit=20&offset=20" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "x-org-id: org_xxxx"
+```
+
+### Sorting
+
+```bash
+# Sort by name (ascending)
+curl -X GET "https://api.example.com/customers?sort=name&direction=asc" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "x-org-id: org_xxxx"
+
+# Sort by creation date (newest first)
+curl -X GET "https://api.example.com/customers?sort=createdAt&direction=desc" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "x-org-id: org_xxxx"
 ```
 
 ## Best Practices
 
 <Tip>
-**Location Naming**: Use descriptive names for locations (e.g., "Headquarters", "Warehouse - East", "Retail Store #1") to make them easy to identify.
+**Partnership Abstraction**: The Customers API automatically handles the underlying partnership creation. You don't need to manage partnerships directly - just use the Customers endpoints.
 </Tip>
 
 <Tip>
-**Contact Roles**: Use consistent role names (e.g., "Purchasing Manager", "Accounts Payable", "Shipping Contact") to standardize how contacts are used.
+**Location Labels**: Use descriptive labels (e.g., "Headquarters", "Warehouse", "Distribution Center") to make locations easy to identify and update by label.
 </Tip>
 
 <Tip>
-**Complete Updates**: When updating customers, always send the complete list of locations and contacts you want to keep. Missing items will be deleted.
+**Case-Insensitive Matching**: Location labels and contact names are matched case-insensitively, so "HQ" matches "hq" and "John Doe" matches "john doe".
+</Tip>
+
+<Tip>
+**Batch Operations**: Prefer single PATCH requests with all location/contact changes over multiple sequential requests. Parallel execution reduces total time.
+</Tip>
+
+<Tip>
+**Property Merge Pattern**: Set unwanted properties to `null` to delete them. New properties are automatically added. No need to send the full property object on every update.
 </Tip>
 
 <Warning>
-**Sub-resource Deletion**: Be careful when updating customers - locations and contacts not included in a PATCH request will be deleted. Always include all sub-resources you want to preserve.
+**Sub-resource Deletion**: When updating customers, locations and contacts not included in the request will be deleted. Always include all sub-resources you want to preserve.
+</Warning>
+
+<Warning>
+**Soft Deletes**: Deleted customers aren't removed from the database - they're marked with a `deletedAt` timestamp and excluded from queries.
 </Warning>
 
 ## Next Steps
 
-- Learn about the [Partners](/guides/partners) model that connects customers and suppliers
+- Learn about [Partners](/guides/partners) - The underlying model powering customers
 - Understand how customers are used in [Orders](/guides/orders)
 - Review [Invoices](/guides/invoices) and customer billing relationships
+- Explore [Suppliers](/guides/suppliers) - The parallel implementation for supplier relationships

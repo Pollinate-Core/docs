@@ -46,21 +46,31 @@ All resources support standard CRUD operations:
 - `PATCH /{resource}/{id}` - Update a resource
 - `DELETE /{resource}/{id}` - Delete a resource
 
-## Pagination
+## Pagination & Sorting
 
-All list endpoints support pagination using query parameters:
+All list endpoints support pagination and sorting using query parameters:
 
-- `limit` (integer) - Maximum number of results to return
-- `offset` (integer) - Number of results to skip
-- `sort` (enum: `asc`, `desc`) - Sort order
+### Pagination
+- `limit` (integer) - Maximum number of results to return (default varies by endpoint)
+- `offset` (integer) - Number of results to skip (default: 0)
+
+### Sorting
+- `sort` (string) - Field name to sort by (e.g., `createdAt`, `updatedAt`, `name`)
+- `direction` (enum: `asc`, `desc`) - Sort direction
 
 ### Example
 
 ```bash
-GET /products?limit=50&offset=0&sort=asc
+GET /products?limit=50&offset=0&sort=createdAt&direction=asc
 ```
 
-This returns the first 50 products, sorted in ascending order.
+This returns the first 50 products, sorted by creation date in ascending order.
+
+```bash
+GET /orders?limit=20&offset=20&sort=updatedAt&direction=desc
+```
+
+This returns orders 20-40, sorted by update date in descending order (newest first).
 
 ## Nested Resources and PATCH Diffing Logic
 
