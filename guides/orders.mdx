@@ -32,11 +32,25 @@ Order
 
 ## Order Lines
 
-Order lines are nested within orders and don't have separate endpoints. Each line item references a variant partnership price (the price of a product variant for a specific partnership) and includes quantity, pricing, and optional properties.
+Order lines are nested within orders and don't have separate endpoints. Each line item can reference a variant partnership price (the price of a product variant for a specific partnership) or be created manually with a description and pricing. All lines include quantity, pricing, and optional properties.
 
 <Note>
 When creating or updating an order, include order lines directly in the request body. The API uses intelligent diffing to determine whether to create, update, or delete order lines based on matching by ID, variant, or description.
 </Note>
+
+### Order Line Creation Modes
+
+Order lines can be created in two ways:
+
+1. **Using Variant Partnership Price (VPP)**: Provide `variantPartnershipPriceId` to reference an existing price for a variant-partnership combination. The system will use the price from the VPP.
+
+2. **Using Variant ID**: Provide `variantId` instead of `variantPartnershipPriceId`. The system will automatically resolve the variant ID to the appropriate Variant Partnership Price ID for the order's partnership. This is convenient when you know the variant but not the specific VPP ID.
+
+3. **Manual Lines**: Create lines without a variant reference by providing `description`, `quantity`, and `unitPrice`. These are useful for custom items, services, or products not yet in your catalog.
+
+<Warning>
+You cannot provide both `variantId` and `variantPartnershipPriceId` in the same line. Use one or the other, or create a manual line.
+</Warning>
 
 ### Example Order with Order Lines
 
@@ -76,11 +90,17 @@ When creating or updating an order, include order lines directly in the request 
       }
     },
     {
-      "variantPartnershipPriceId": "vpp_456",
-      "description": "Standard Widget",
+      "variantId": "prodvar_456",
       "quantity": 1,
       "unitPrice": 250.00,
       "lineTotal": 250.00,
+      "currency": "USD"
+    },
+    {
+      "description": "Custom Service Item",
+      "quantity": 2,
+      "unitPrice": 100.00,
+      "lineTotal": 200.00,
       "currency": "USD"
     }
   ]
@@ -184,9 +204,10 @@ When updating an order, the API uses intelligent line matching to determine whic
 
 1. **By ID** - If the line includes an `id`, it matches directly to an existing line
 2. **By Variant Partnership Price** - If the line includes `variantPartnershipPriceId`, it searches for an existing line with the same VPP
-3. **By Description** - If the line includes a `description`, it matches case-insensitively with existing lines
-4. **Create** - Lines without a match are created as new
-5. **Delete** - Existing lines without a match in the request are deleted
+3. **By Variant ID** - If the line includes `variantId`, it resolves to the VPP and matches by that VPP (same as priority 2)
+4. **By Description** - If the line includes a `description`, it matches case-insensitively with existing lines
+5. **Create** - Lines without a match are created as new
+6. **Delete** - Existing lines without a match in the request are deleted
 
 ### Example
 
@@ -316,7 +337,7 @@ POST /orders
   "internalReference": "ORG-002",
   "externalReference": "PO-98765",
   "notes": "Standard order",
-  "totalAmount": 1500.00,
+  "totalAmount": "1500.00",
   "currency": "USD",
   "deliveryAddress": {
     "addressLine1": "456 Oak Ave",
@@ -327,15 +348,23 @@ POST /orders
   },
   "lines": [
     {
-      "variantPartnershipPriceId": "vpp_123",
-      "quantity": 20,
-      "unitPrice": 75.00
+      "variantId": "prodvar_123",
+      "quantity": 20
+    },
+    {
+      "variantPartnershipPriceId": "vpp_456",
+      "quantity": 5
+    },
+    {
+      "description": "Custom Item",
+      "quantity": 2,
+      "unitPrice": 50.00
     }
   ]
 }
 ```
 
-2. The API creates the order and all order lines in a single request.
+2. The API creates the order and all order lines in a single request. When using `variantId`, the system automatically resolves it to the appropriate Variant Partnership Price ID for the partnership.
 
 ### Updating Order Lines
 
@@ -351,9 +380,12 @@ PATCH /orders/ord_12345
       "unitPrice": 75.00
     },
     {
-      "variantPartnershipPriceId": "vpp_789",  // New line
-      "quantity": 3,
-      "unitPrice": 50.00
+      "variantId": "prodvar_789",  // New line using variantId (will be resolved to VPP)
+      "quantity": 3
+    },
+    {
+      "variantPartnershipPriceId": "vpp_456",  // New line using VPP directly
+      "quantity": 2
     }
     // Previous lines not included will be deleted
   ]

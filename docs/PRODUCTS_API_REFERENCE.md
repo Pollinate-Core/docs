@@ -244,27 +244,27 @@ Create a new product with optional variants.
 **Product Fields:**
 | Field | Type | Required | Constraints | Description |
 |-------|------|----------|-------------|-------------|
-| `name` | string | Yes | 1-255 chars, no whitespace-only | Product name |
-| `code` | string | No | 1-255 chars | Unique product code per organization |
-| `description` | string | No | 1-4096 chars | Product description |
+| `name` | string | Yes | minLength: 1, maxLength: 255 | Product name |
+| `code` | string | No | minLength: 1, maxLength: 255 (if provided) | Unique product code per organization |
+| `description` | string | No | minLength: 1, maxLength: 4096 (if provided) | Product description |
 | `status` | string | Yes | "active" \| "inactive" | Product status |
 | `properties` | object | No | - | Custom JSON properties |
 | `variants` | array | No | - | Array of variant objects |
 
-**Variant Fields:**
+**Variant Fields (Create):**
 | Field | Type | Required | Constraints | Description |
 |-------|------|----------|-------------|-------------|
-| `name` | string | Yes | 1-255 chars, no whitespace-only | Variant name |
-| `sku` | string | No | 1-255 chars | Stock keeping unit |
-| `barcode` | string | No | 1-255 chars | Barcode identifier |
+| `name` | string | Yes | minLength: 1, maxLength: 255 | Variant name |
+| `sku` | string | No | minLength: 1, maxLength: 255 (if provided) | Stock keeping unit |
+| `barcode` | string | No | minLength: 1, maxLength: 255 (if provided) | Barcode identifier |
 | `uom` | string | Yes | See UOM enum | Unit of measure |
-| `defaultPrice` | number | Yes | ≥ 0 | Price for this variant |
-| `quantityInBaseUom` | number | No | ≥ 0 | Quantity in base unit |
-| `netWeightKg` | number | No | ≥ 0 | Net weight in kg |
-| `grossWeightKg` | number | No | ≥ 0 | Gross weight in kg |
-| `lengthCm` | number | No | ≥ 0 | Length in cm |
-| `widthCm` | number | No | ≥ 0 | Width in cm |
-| `heightCm` | number | No | ≥ 0 | Height in cm |
+| `defaultPrice` | number | Yes | minimum: 0 | Price for this variant |
+| `quantityInBaseUom` | number | No | minimum: 0 (if provided) | Quantity in base unit |
+| `netWeightKg` | number | No | minimum: 0 (if provided) | Net weight in kg |
+| `grossWeightKg` | number | No | minimum: 0 (if provided) | Gross weight in kg |
+| `lengthCm` | number | No | minimum: 0 (if provided) | Length in cm |
+| `widthCm` | number | No | minimum: 0 (if provided) | Width in cm |
+| `heightCm` | number | No | minimum: 0 (if provided) | Height in cm |
 | `properties` | object | No | - | Custom JSON properties |
 
 **UOM (Unit of Measure) Values:**
@@ -292,11 +292,11 @@ Create a new product with optional variants.
 }
 ```
 
-**Response:** Same as GET /products/:id
+**Response:** Same as GET /products/:id (ProductDetailResponse with variants array)
 
 **Status Codes:**
 - `200 OK` - Product created successfully
-- `400 Bad Request` - Validation error (e.g., custom ID provided, whitespace-only name)
+- `400 Bad Request` - Validation error (e.g., invalid field constraints, missing required fields)
 - `401 Unauthorized` - Missing or invalid authentication
 
 ---
@@ -335,10 +335,42 @@ PATCH /products/prod_01G8ZJ5XK9ABCDEFGHIJ
 }
 ```
 
+**Request Field Specifications:**
+
+**Product Fields (all optional):**
+| Field | Type | Required | Constraints | Description |
+|-------|------|----------|-------------|-------------|
+| `name` | string | No | minLength: 1 (if provided) | Product name |
+| `code` | string | No | - | Product code (can be null to clear) |
+| `description` | string | No | - | Product description (can be null to clear) |
+| `status` | string | No | "active" \| "inactive" | Product status |
+| `properties` | object | No | - | Custom JSON properties |
+| `variants` | array | No | - | Array of variant objects (update or create) |
+
+**Variant Fields (Update - requires `id`):**
+| Field | Type | Required | Constraints | Description |
+|-------|------|----------|-------------|-------------|
+| `id` | string | **Yes** | - | Variant identifier (required for updates) |
+| `name` | string | No | minLength: 1, maxLength: 255 (if provided) | Variant name |
+| `sku` | string | No | minLength: 1, maxLength: 255 (if provided) | Stock keeping unit |
+| `barcode` | string | No | minLength: 1, maxLength: 255 (if provided) | Barcode identifier |
+| `uom` | string | No | See UOM enum | Unit of measure |
+| `defaultPrice` | number | No | minimum: 0 (if provided) | Price for this variant |
+| `quantityInBaseUom` | number | No | minimum: 0 (if provided) | Quantity in base unit |
+| `netWeightKg` | number | No | minimum: 0 (if provided) | Net weight in kg |
+| `grossWeightKg` | number | No | minimum: 0 (if provided) | Gross weight in kg |
+| `lengthCm` | number | No | minimum: 0 (if provided) | Length in cm |
+| `widthCm` | number | No | minimum: 0 (if provided) | Width in cm |
+| `heightCm` | number | No | minimum: 0 (if provided) | Height in cm |
+| `properties` | object | No | - | Custom JSON properties |
+
+**Variant Fields (Create - no `id`):**
+Same as POST /products variant fields. Variants without `id` are treated as new variants.
+
 **Variant Diffing Logic:**
 
-1. **Variants with ID:** Matched to existing variants by ID. Properties are merged.
-2. **Variants without ID:** Matched to existing variants by name (case-insensitive). Properties are merged.
+1. **Variants with ID:** **REQUIRED** - Matched to existing variants by ID. All fields optional except `id`. Properties are merged.
+2. **Variants without ID:** Matched to existing variants by name (case-insensitive). If no match found, variant is created. Properties are merged.
 3. **New Variants:** Incoming variants without ID and no matching name are created.
 4. **Deleted Variants:** Existing variants not matched by any incoming variant are soft-deleted.
 5. **Empty Array:** Sending `variants: []` soft-deletes all variants.

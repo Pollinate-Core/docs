@@ -186,11 +186,19 @@
       },
       "TokenResponse": {
         "type": "object",
-        "required": ["token"],
+        "required": ["token", "userId", "expiresIn"],
         "properties": {
           "token": {
             "type": "string",
             "description": "Bearer token for authentication"
+          },
+          "userId": {
+            "type": "string",
+            "description": "User identifier for the authenticated user"
+          },
+          "expiresIn": {
+            "type": "integer",
+            "description": "Token expiration time in seconds"
           }
         }
       },
@@ -211,10 +219,12 @@
           },
           "sku": {
             "type": "string",
+            "nullable": true,
             "description": "Stock keeping unit"
           },
           "barcode": {
             "type": "string",
+            "nullable": true,
             "description": "Barcode identifier"
           },
           "uom": {
@@ -229,31 +239,37 @@
           },
           "quantityInBaseUom": {
             "type": "number",
+            "nullable": true,
             "description": "Quantity in base unit of measure"
           },
           "netWeightKg": {
             "type": "number",
             "format": "float",
+            "nullable": true,
             "description": "Net weight in kilograms"
           },
           "grossWeightKg": {
             "type": "number",
             "format": "float",
+            "nullable": true,
             "description": "Gross weight in kilograms"
           },
           "lengthCm": {
             "type": "number",
             "format": "float",
+            "nullable": true,
             "description": "Length in centimeters"
           },
           "widthCm": {
             "type": "number",
             "format": "float",
+            "nullable": true,
             "description": "Width in centimeters"
           },
           "heightCm": {
             "type": "number",
             "format": "float",
+            "nullable": true,
             "description": "Height in centimeters"
           },
           "properties": {
@@ -273,7 +289,148 @@
           "deletedAt": {
             "type": "string",
             "format": "date-time",
+            "nullable": true,
             "description": "Deletion timestamp (soft delete)"
+          }
+        }
+      },
+      "CreateProductVariantRequest": {
+        "type": "object",
+        "required": ["name", "uom", "defaultPrice"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Variant name"
+          },
+          "sku": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Stock keeping unit"
+          },
+          "barcode": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Barcode identifier"
+          },
+          "uom": {
+            "type": "string",
+            "enum": ["each", "kg", "g", "litre", "box", "carton", "crate", "pallet"],
+            "description": "Unit of measure"
+          },
+          "defaultPrice": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Default price for variant (must be >= 0)"
+          },
+          "quantityInBaseUom": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Quantity in base unit of measure (must be >= 0)"
+          },
+          "netWeightKg": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Net weight in kilograms (must be >= 0)"
+          },
+          "grossWeightKg": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Gross weight in kilograms (must be >= 0)"
+          },
+          "lengthCm": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Length in centimeters (must be >= 0)"
+          },
+          "widthCm": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Width in centimeters (must be >= 0)"
+          },
+          "heightCm": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Height in centimeters (must be >= 0)"
+          },
+          "properties": {
+            "type": "object",
+            "description": "Custom metadata properties"
+          }
+        }
+      },
+      "UpdateProductVariantRequest": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Variant identifier (required for update)"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Variant name"
+          },
+          "sku": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Stock keeping unit"
+          },
+          "barcode": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Barcode identifier"
+          },
+          "uom": {
+            "type": "string",
+            "enum": ["each", "kg", "g", "litre", "box", "carton", "crate", "pallet"],
+            "description": "Unit of measure"
+          },
+          "defaultPrice": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Default price for variant (must be >= 0)"
+          },
+          "quantityInBaseUom": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Quantity in base unit of measure (must be >= 0)"
+          },
+          "netWeightKg": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Net weight in kilograms (must be >= 0)"
+          },
+          "grossWeightKg": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Gross weight in kilograms (must be >= 0)"
+          },
+          "lengthCm": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Length in centimeters (must be >= 0)"
+          },
+          "widthCm": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Width in centimeters (must be >= 0)"
+          },
+          "heightCm": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Height in centimeters (must be >= 0)"
+          },
+          "properties": {
+            "type": "object",
+            "description": "Custom metadata properties"
           }
         }
       },
@@ -294,10 +451,12 @@
           },
           "code": {
             "type": "string",
+            "nullable": true,
             "description": "Unique product code per organization"
           },
           "description": {
             "type": "string",
+            "nullable": true,
             "description": "Product description"
           },
           "status": {
@@ -329,7 +488,126 @@
           "deletedAt": {
             "type": "string",
             "format": "date-time",
+            "nullable": true,
             "description": "Deletion timestamp (soft delete)"
+          }
+        }
+      },
+      "CreateProductRequest": {
+        "type": "object",
+        "required": ["name", "status"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "The name of the product"
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "The code of the product"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096,
+            "description": "The description of the product"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "inactive"],
+            "description": "Product status"
+          },
+          "properties": {
+            "type": "object",
+            "description": "Custom metadata properties"
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateProductVariantRequest"
+            },
+            "description": "Optional array of product variants to create"
+          }
+        }
+      },
+      "UpdateProductRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The name of the product"
+          },
+          "code": {
+            "type": "string",
+            "description": "The code of the product"
+          },
+          "description": {
+            "type": "string",
+            "description": "The description of the product"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "inactive"],
+            "description": "Product status"
+          },
+          "properties": {
+            "type": "object",
+            "description": "Custom metadata properties"
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/UpdateProductVariantRequest"
+                },
+                {
+                  "$ref": "#/components/schemas/CreateProductVariantRequest"
+                }
+              ]
+            },
+            "description": "Array of variants. Variants with id will be updated (matched by id), variants without id will be created (if no matching name), and variants not in array will be soft-deleted."
+          }
+        }
+      },
+      "ProductDetailResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Product"
+          },
+          {
+            "type": "object",
+            "required": ["variants"],
+            "properties": {
+              "variants": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ProductVariant"
+                },
+                "description": "Product variants"
+              }
+            }
+          }
+        ]
+      },
+      "ProductListResponse": {
+        "type": "object",
+        "required": ["count", "data"],
+        "properties": {
+          "count": {
+            "type": "number",
+            "description": "Total number of products matching query"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductDetailResponse"
+            },
+            "description": "List of products with variants"
           }
         }
       },
@@ -340,6 +618,16 @@
             "type": "string",
             "description": "Location identifier"
           },
+          "organizationId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Organization identifier"
+          },
+          "partnerId": {
+            "type": "string",
+            "nullable": true,
+            "description": "Partner identifier"
+          },
           "type": {
             "type": "string",
             "enum": ["billing", "shipping", "remittance"],
@@ -347,6 +635,7 @@
           },
           "label": {
             "type": "string",
+            "nullable": true,
             "description": "Location label (user-friendly name)"
           },
           "addressLine1": {
@@ -355,6 +644,7 @@
           },
           "addressLine2": {
             "type": "string",
+            "nullable": true,
             "description": "Street address line 2"
           },
           "city": {
@@ -363,10 +653,12 @@
           },
           "state": {
             "type": "string",
+            "nullable": true,
             "description": "State or province"
           },
           "postalCode": {
             "type": "string",
+            "nullable": true,
             "description": "ZIP or postal code"
           },
           "country": {
@@ -379,28 +671,34 @@
           },
           "contactName": {
             "type": "string",
+            "nullable": true,
             "description": "Contact name at location"
           },
           "contactPhone": {
             "type": "string",
+            "nullable": true,
             "description": "Contact phone at location"
           },
           "deliveryInstructions": {
             "type": "string",
+            "nullable": true,
             "description": "Special delivery instructions"
           },
           "longitude": {
             "type": "number",
             "format": "float",
+            "nullable": true,
             "description": "Geographic longitude"
           },
           "latitude": {
             "type": "number",
             "format": "float",
+            "nullable": true,
             "description": "Geographic latitude"
           },
           "formattedAddress": {
             "type": "string",
+            "nullable": true,
             "description": "Formatted address string"
           },
           "properties": {
@@ -420,6 +718,7 @@
           "deletedAt": {
             "type": "string",
             "format": "date-time",
+            "nullable": true,
             "description": "Deletion timestamp (soft delete)"
           }
         }
@@ -431,17 +730,23 @@
             "type": "string",
             "description": "Contact identifier"
           },
+          "partnerId": {
+            "type": "string",
+            "description": "Partner identifier"
+          },
           "name": {
             "type": "string",
             "description": "Contact name"
           },
           "title": {
             "type": "string",
+            "nullable": true,
             "description": "Contact job title"
           },
           "role": {
             "type": "string",
             "enum": ["primary", "sales", "accounting", "logistics", "executive"],
+            "nullable": true,
             "description": "Contact role"
           },
           "isPrimary": {
@@ -450,19 +755,23 @@
           },
           "notes": {
             "type": "string",
+            "nullable": true,
             "description": "Internal notes about contact"
           },
           "email": {
             "type": "string",
             "format": "email",
+            "nullable": true,
             "description": "Contact email"
           },
           "phone": {
             "type": "string",
+            "nullable": true,
             "description": "Contact phone number"
           },
           "mobile": {
             "type": "string",
+            "nullable": true,
             "description": "Contact mobile number"
           },
           "properties": {
@@ -482,6 +791,7 @@
           "deletedAt": {
             "type": "string",
             "format": "date-time",
+            "nullable": true,
             "description": "Deletion timestamp (soft delete)"
           }
         }
@@ -507,27 +817,33 @@
           },
           "legalName": {
             "type": "string",
+            "nullable": true,
             "description": "Full legal entity name"
           },
           "code": {
             "type": "string",
+            "nullable": true,
             "description": "Unique customer code"
           },
           "notes": {
             "type": "string",
+            "nullable": true,
             "description": "Internal notes"
           },
           "email": {
             "type": "string",
             "format": "email",
+            "nullable": true,
             "description": "Contact email"
           },
           "phone": {
             "type": "string",
+            "nullable": true,
             "description": "Contact phone"
           },
           "website": {
             "type": "string",
+            "nullable": true,
             "description": "Website URL"
           },
           "status": {
@@ -537,11 +853,13 @@
           },
           "paymentTermsDays": {
             "type": "integer",
+            "nullable": true,
             "description": "Payment terms in days"
           },
           "creditLimit": {
             "type": "number",
             "format": "float",
+            "nullable": true,
             "description": "Credit limit in base currency"
           },
           "defaultCurrency": {
@@ -550,11 +868,13 @@
           },
           "leadTimeDays": {
             "type": "integer",
+            "nullable": true,
             "description": "Lead time in days"
           },
           "minimumOrderValue": {
             "type": "number",
             "format": "float",
+            "nullable": true,
             "description": "Minimum order value"
           },
           "properties": {
@@ -588,6 +908,7 @@
           "deletedAt": {
             "type": "string",
             "format": "date-time",
+            "nullable": true,
             "description": "Deletion timestamp (soft delete)"
           }
         }
@@ -666,10 +987,12 @@
           },
           "variantPartnershipPriceId": {
             "type": "string",
+            "nullable": true,
             "description": "Variant Partnership Price identifier"
           },
           "description": {
             "type": "string",
+            "nullable": true,
             "description": "Line description for manual items"
           },
           "quantity": {
@@ -679,6 +1002,7 @@
           "unitPrice": {
             "type": "number",
             "format": "float",
+            "nullable": true,
             "description": "Price per unit"
           },
           "lineTotal": {
@@ -707,6 +1031,7 @@
           "deletedAt": {
             "type": "string",
             "format": "date-time",
+            "nullable": true,
             "description": "Line deletion timestamp (soft delete)"
           }
         }
@@ -728,6 +1053,7 @@
           },
           "locationId": {
             "type": "string",
+            "nullable": true,
             "description": "Location identifier for delivery address population"
           },
           "status": {
@@ -741,10 +1067,12 @@
           },
           "externalReference": {
             "type": "string",
+            "nullable": true,
             "description": "External reference or PO number"
           },
           "notes": {
             "type": "string",
+            "nullable": true,
             "description": "Order notes"
           },
           "totalAmount": {
@@ -762,38 +1090,46 @@
           },
           "packedBy": {
             "type": "string",
+            "nullable": true,
             "description": "User ID of person who packed the order"
           },
           "packedAt": {
             "type": "string",
             "format": "date-time",
+            "nullable": true,
             "description": "Timestamp when order was packed"
           },
           "shippedBy": {
             "type": "string",
+            "nullable": true,
             "description": "User ID of person who shipped the order"
           },
           "shippedAt": {
             "type": "string",
             "format": "date-time",
+            "nullable": true,
             "description": "Timestamp when order was shipped"
           },
           "deliveredBy": {
             "type": "string",
+            "nullable": true,
             "description": "User ID of person who confirmed delivery"
           },
           "deliveredAt": {
             "type": "string",
             "format": "date-time",
+            "nullable": true,
             "description": "Timestamp when order was delivered"
           },
           "returnedBy": {
             "type": "string",
+            "nullable": true,
             "description": "User ID of person who processed return"
           },
           "returnedAt": {
             "type": "string",
             "format": "date-time",
+            "nullable": true,
             "description": "Timestamp when order was returned"
           },
           "properties": {
@@ -820,7 +1156,207 @@
           "deletedAt": {
             "type": "string",
             "format": "date-time",
+            "nullable": true,
             "description": "Order deletion timestamp (soft delete)"
+          }
+        }
+      },
+      "OrderLineCreate": {
+        "type": "object",
+        "properties": {
+          "variantPartnershipPriceId": {
+            "type": "string",
+            "description": "Variant Partnership Price identifier (alternative to variantId)"
+          },
+          "variantId": {
+            "type": "string",
+            "description": "Variant identifier - will be resolved to Variant Partnership Price ID (alternative to variantPartnershipPriceId)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Line description (required for manual lines)"
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Quantity ordered (required)"
+          },
+          "unitPrice": {
+            "type": "number",
+            "format": "float",
+            "description": "Price per unit (required for manual lines)"
+          },
+          "lineTotal": {
+            "type": "number",
+            "format": "float",
+            "description": "Total line price (auto-calculated if not provided)"
+          },
+          "currency": {
+            "type": "string",
+            "description": "Currency code (defaults to partnership defaultCurrency or USD)"
+          },
+          "properties": {
+            "type": "object",
+            "description": "Custom properties for the line"
+          }
+        },
+        "required": ["quantity"]
+      },
+      "OrderLineUpdate": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Order line identifier (used for matching existing lines)"
+          },
+          "variantPartnershipPriceId": {
+            "type": "string",
+            "description": "Variant Partnership Price identifier (used for matching or updating)"
+          },
+          "variantId": {
+            "type": "string",
+            "description": "Variant identifier - will be resolved to Variant Partnership Price ID (alternative to variantPartnershipPriceId)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Line description"
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Quantity ordered"
+          },
+          "unitPrice": {
+            "type": "number",
+            "format": "float",
+            "description": "Price per unit"
+          },
+          "lineTotal": {
+            "type": "number",
+            "format": "float",
+            "description": "Total line price"
+          },
+          "currency": {
+            "type": "string",
+            "description": "Currency code"
+          },
+          "properties": {
+            "type": "object",
+            "description": "Custom properties for the line"
+          }
+        }
+      },
+      "OrderCreateRequest": {
+        "type": "object",
+        "properties": {
+          "partnershipId": {
+            "type": "string",
+            "description": "Partnership ID for this order (required)"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["draft", "pending", "rejected", "accepted", "packed", "shipped", "delivered", "cancelled", "returned"],
+            "description": "Initial order status (required)"
+          },
+          "internalReference": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Custom internal reference (auto-generated if omitted, must be at least 1 character if provided)"
+          },
+          "externalReference": {
+            "type": "string",
+            "description": "External reference or PO number"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Order notes"
+          },
+          "totalAmount": {
+            "type": "string",
+            "description": "Total order amount (optional string)"
+          },
+          "currency": {
+            "type": "string",
+            "description": "Currency code (optional, defaults to partnership defaultCurrency or USD)"
+          },
+          "locationId": {
+            "type": "string",
+            "description": "Linked location for delivery address population"
+          },
+          "deliveryAddress": {
+            "$ref": "#/components/schemas/DeliveryAddress",
+            "description": "Custom delivery address"
+          },
+          "properties": {
+            "type": "object",
+            "description": "Custom JSONB properties"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderLineCreate"
+            },
+            "description": "Order lines to create"
+          }
+        },
+        "required": ["partnershipId", "status"]
+      },
+      "OrderUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "partnershipId": {
+            "type": "string",
+            "description": "Partnership ID for this order"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["draft", "pending", "rejected", "accepted", "packed", "shipped", "delivered", "cancelled", "returned"],
+            "description": "Order status"
+          },
+          "internalReference": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Internal reference (must be at least 1 character if provided)"
+          },
+          "externalReference": {
+            "type": "string",
+            "description": "External reference or PO number"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Order notes"
+          },
+          "totalAmount": {
+            "type": "string",
+            "description": "Total order amount"
+          },
+          "currency": {
+            "type": "string",
+            "description": "Currency code"
+          },
+          "locationId": {
+            "type": "string",
+            "description": "Linked location for delivery address population"
+          },
+          "deliveryAddress": {
+            "$ref": "#/components/schemas/DeliveryAddress",
+            "description": "Custom delivery address"
+          },
+          "properties": {
+            "type": "object",
+            "description": "Custom JSONB properties (merged with existing properties)"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/OrderLineUpdate"
+                },
+                {
+                  "$ref": "#/components/schemas/OrderLineCreate"
+                }
+              ]
+            },
+            "description": "Order lines (matched by ID, variantPartnershipPriceId, or description; unmatched incoming lines are created, unmatched existing lines are deleted)"
           }
         }
       },
@@ -962,7 +1498,9 @@
                   "$ref": "#/components/schemas/TokenResponse"
                 },
                 "example": {
-                  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  "token": "5620b3b762204d0c105cb316c323f962c6ff895f307471a190778f9be2131cedf698a78a3b326f8cd331dd7be0a0b7f21808e821fc66e6a07bd5efb3597e6087",
+                  "userId": "user_8c131306-a633-44d2-8ccc-896ebe62bbf2",
+                  "expiresIn": 2592000
                 }
               }
             }
@@ -1026,19 +1564,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "count": {
-                      "type": "integer",
-                      "description": "Total number of products matching query"
-                    },
-                    "data": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Product"
-                      }
-                    }
-                  }
+                  "$ref": "#/components/schemas/ProductListResponse"
                 }
               }
             }
@@ -1083,18 +1609,18 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Product"
+                "$ref": "#/components/schemas/CreateProductRequest"
               }
             }
           }
         },
         "responses": {
-          "201": {
+          "200": {
             "description": "Product created",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Product"
+                  "$ref": "#/components/schemas/ProductDetailResponse"
                 }
               }
             }
@@ -1155,7 +1681,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Product"
+                  "$ref": "#/components/schemas/ProductDetailResponse"
                 }
               }
             }
@@ -1203,7 +1729,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Product"
+                "$ref": "#/components/schemas/UpdateProductRequest"
               }
             }
           }
@@ -1214,7 +1740,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Product"
+                  "$ref": "#/components/schemas/ProductDetailResponse"
                 }
               }
             }
@@ -1333,6 +1859,9 @@
           },
           {
             "$ref": "#/components/parameters/paginationOffset"
+          },
+          {
+            "$ref": "#/components/parameters/searchQuery"
           },
           {
             "$ref": "#/components/parameters/sortField"
@@ -1904,7 +2433,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Order"
+                "$ref": "#/components/schemas/OrderCreateRequest"
               }
             }
           }
@@ -2014,7 +2543,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Order"
+                "$ref": "#/components/schemas/OrderUpdateRequest"
               }
             }
           }

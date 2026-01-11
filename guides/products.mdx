@@ -52,10 +52,10 @@ Soft-deleted products are not physically removed from the database, preserving d
 
 Variants are SKU-level entities representing specific product configurations. Each variant requires:
 
-**Required Variant Fields:**
-- `name` - Variant identifier (unique within product)
+**Required Variant Fields (Create):**
+- `name` - Variant identifier (unique within product, 1-255 characters)
 - `uom` - Unit of measure
-- `defaultPrice` - Default pricing
+- `defaultPrice` - Default pricing (must be >= 0)
 
 **Unit of Measure (UOM) Values:**
 - `each` - Individual items
@@ -67,13 +67,16 @@ Variants are SKU-level entities representing specific product configurations. Ea
 - `crate` - Crate quantities
 - `pallet` - Pallet quantities
 
-**Optional Variant Fields:**
-- `sku` - Stock keeping unit
-- `barcode` - Barcode identifier
-- Dimensions: `lengthCm`, `widthCm`, `heightCm`
-- Weights: `netWeightKg`, `grossWeightKg`
-- `quantityInBaseUom` - Quantity in base unit
+**Optional Variant Fields (Create):**
+- `sku` - Stock keeping unit (1-255 characters if provided)
+- `barcode` - Barcode identifier (1-255 characters if provided)
+- Dimensions: `lengthCm`, `widthCm`, `heightCm` (must be >= 0 if provided)
+- Weights: `netWeightKg`, `grossWeightKg` (must be >= 0 if provided)
+- `quantityInBaseUom` - Quantity in base unit (must be >= 0 if provided)
 - `properties` - Custom metadata
+
+**Variant Update Requirements:**
+When updating variants via PATCH, the `id` field is **required** to match existing variants. All other fields are optional.
 
 ### Example Product with Full Structure
 
@@ -206,7 +209,7 @@ When updating a product, the API intelligently matches incoming variants to exis
 
 ### Matching Priority
 
-1. **By ID (Priority 1)** - If an incoming variant includes an `id` field, it matches directly to an existing variant
+1. **By ID (Priority 1)** - If an incoming variant includes an `id` field, it matches directly to an existing variant. **Note:** When updating variants, the `id` field is required for reliable matching.
 2. **By Name (Priority 2)** - If no ID is provided, the API matches by name (case-insensitive)
 3. **Creates** - Incoming variants without ID and no matching name are created
 4. **Deletes** - Existing variants not matched by any incoming variant are soft-deleted
@@ -379,7 +382,7 @@ POST /products
 
 ### Updating Variants by ID
 
-Update specific variants using their IDs:
+Update specific variants using their IDs. **Note:** The `id` field is **required** for variant updates:
 
 ```json
 PATCH /products/prod_01G8ZJ5XK9ABCDEFGHIJ
@@ -396,6 +399,8 @@ PATCH /products/prod_01G8ZJ5XK9ABCDEFGHIJ
   ]
 }
 ```
+
+**Important:** When updating variants, you must include the `id` field. Variants without `id` will be matched by name (case-insensitive) or created if no match is found.
 
 ### Updating Variants by Name
 
@@ -465,6 +470,8 @@ PATCH /products/prod_01G8ZJ5XK9ABCDEFGHIJ
 }
 ```
 
+**Note:** The first variant includes `id` (required for updates), while the second variant has no `id` and will be matched by name or created if no match exists.
+
 ## Filtering, Sorting, and Pagination
 
 ### Filter by Status
@@ -516,7 +523,7 @@ curl -X GET "https://api.example.com/products?sort=createdAt&direction=desc" \
 ## Best Practices
 
 <Tip>
-**Variant IDs**: When tracking variants, store their IDs for reliable updates. This avoids potential name-matching issues.
+**Variant IDs**: When tracking variants, store their IDs for reliable updates. The `id` field is **required** when updating variants via PATCH. This avoids potential name-matching issues and ensures precise updates.
 </Tip>
 
 <Tip>

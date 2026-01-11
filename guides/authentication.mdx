@@ -18,7 +18,7 @@ sequenceDiagram
     participant API as Pollinate API
     
     Client->>API: POST /token<br/>Basic Auth (email:password)
-    API-->>Client: 200 OK<br/>{"token": "..."}
+    API-->>Client: 200 OK<br/>{"token": "...", "userId": "...", "expiresIn": 2592000}
     
     Note over Client,API: All subsequent requests
     
@@ -100,13 +100,27 @@ token = response.json()['token']
 
 ```json
 {
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  "token": "5620b3b762204d0c105cb316c323f962c6ff895f307471a190778f9be2131cedf698a78a3b326f8cd331dd7be0a0b7f21808e821fc66e6a07bd5efb3597e6087",
+  "userId": "user_8c131306-a633-44d2-8ccc-896ebe62bbf2",
+  "expiresIn": 2592000
 }
 ```
 
+**Response Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `token` | string | Bearer token for authentication |
+| `userId` | string | User identifier for the authenticated user |
+| `expiresIn` | integer | Token expiration time in seconds (e.g., 2592000 = 30 days) |
+
 <Warning>
-Store your token securely and never commit it to version control. Tokens expire after a period of inactivity - you'll need to request a new token when this happens.
+Store your token securely and never commit it to version control. Tokens expire after the period specified in `expiresIn` (in seconds) - you'll need to request a new token when this happens.
 </Warning>
+
+<Note>
+The `userId` field in the response can be used to identify which user account the token belongs to. The `expiresIn` field indicates how long the token will remain valid (in seconds). For example, 2592000 seconds equals 30 days.
+</Note>
 
 ## Step 2: Authenticate Requests
 
@@ -219,7 +233,7 @@ If you receive a 401 response, request a new token using the token endpoint.
 ## Best Practices
 
 <Tip>
-**Token Management**: Implement token refresh logic to automatically request a new token when you receive a 401 response. Store tokens securely and avoid hardcoding them in your application.
+**Token Management**: Implement token refresh logic to automatically request a new token when you receive a 401 response or when the token expires (check the `expiresIn` value from the initial response). Store tokens securely and avoid hardcoding them in your application. The `userId` field can help track which user the token belongs to.
 </Tip>
 
 <Tip>
