@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "https://www.api.pollinate.tech",
+      "url": "https://api.pollinate.tech",
       "description": "Production server"
     },
     {
