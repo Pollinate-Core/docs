@@ -18,7 +18,9 @@
         "groups": [
           {
             "group": "Getting Started",
-            "pages": ["guides/authentication"]
+            "pages": [
+              "guides/authentication"
+            ]
           },
           {
             "group": "Resources",
@@ -35,7 +37,7 @@
       },
       {
         "tab": "API Reference",
-        "openapi": "api-reference/openapi.json"
+        "openapi": "https://api.pollinate.tech/openapi/json"
       }
     ]
   },
